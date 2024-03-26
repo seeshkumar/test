@@ -1,0 +1,45 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use .NET 8
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build the project
+        run: dotnet build --configuration Release
+
+      - name: Check build output
+        run: |
+          dotnet build -v minimal
+
+          # Look for success message and no warnings/errors
+          if [[ ! $(grep -r "Build succeeded" ./**/*.txt) ]]; then
+            echo "Build failed!"
+            exit 1
+          fi
+
+          if [[ $(grep -r "Warning(s)" ./**/*.txt | wc -l) -gt 0 ]]; then
+            echo "Build warnings detected!"
+            exit 1
+          fi
+
+          if [[ $(grep -r "Error(s)" ./**/*.txt | wc -l) -gt 0 ]]; then
+            echo "Build errors detected!"
+            exit 1
+          fi
+
+          echo "Build successful!"
